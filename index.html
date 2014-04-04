@@ -1,71 +1,103 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
+
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Parallel Style Transfer by jaisrael</title>
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/respond.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <!--[if lt IE 8]>
-    <link rel="stylesheet" href="stylesheets/ie.css">
-    <![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Parallel Style Transfer : Jason Israel and Michael Kamm, Going for Real-Time style transfer" />
 
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Parallel Style Transfer</title>
   </head>
+
   <body>
-      <div id="header">
-        <nav>
-          <li class="fork"><a href="https://github.com/jaisrael/ParallelStyleTransfer">View On GitHub</a></li>
-          <li class="downloads"><a href="https://github.com/jaisrael/ParallelStyleTransfer/zipball/master">ZIP</a></li>
-          <li class="downloads"><a href="https://github.com/jaisrael/ParallelStyleTransfer/tarball/master">TAR</a></li>
-          <li class="title">DOWNLOADS</li>
-        </nav>
-      </div><!-- end header -->
 
-    <div class="wrapper">
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/jaisrael/ParallelStyleTransfer">View on GitHub</a>
 
-      <section>
-        <div id="title">
-          <h1>Parallel Style Transfer</h1>
-          <p>Jason Israel and Michael Kamm, Going for Real-Time style transfer</p>
-          <hr>
-          <span class="credits left">Project maintained by <a href="https://github.com/jaisrael">jaisrael</a></span>
-          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
-        </div>
+          <h1 id="project_title">Parallel Style Transfer</h1>
+          <h2 id="project_tagline">Jason Israel and Michael Kamm, Going for Real-Time style transfer</h2>
 
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/jaisrael/ParallelStyleTransfer/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/jaisrael/ParallelStyleTransfer/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
         <h3>
 <a name="summary" class="anchor" href="#summary"><span class="octicon octicon-link"></span></a>Summary</h3>
 
-<p>We would like to be able to transfer the style of one image to another.  We are going to do this on the NVIDIA GPUs in the lab.  Ideally, we would like to achieve real-time analysis.</p>
+<p>We would like to implement a parallel example-based style transfer algorithm.  We are going to do this on the NVIDIA GPUs in the lab.  Ideally, we would like to achieve real-time analysis.</p>
 
 <h3>
 <a name="background" class="anchor" href="#background"><span class="octicon octicon-link"></span></a>Background</h3>
 
-<p>The core idea of our project is best described by the term "Image Analogy". An image analogy takes an image (a), a styled version of the first image (A'), and applies the style to a third image (B), to create the result (B').  In the form of an analogy, this is A : A' :: B : B'.  Our current starter code executing a similar algorithm currently takes a few seconds on a high definition image.  </p>
+<p>Example-based style transfer is the process of transferring the "style" of one image to another. For example, if we have an image of a watercolor painting and an image of a real-world photograph, we'd like to transfer the "style" of the painting to the photograph, while preserving the photographs structure (images below taken from <a href="http://www.mrl.nyu.edu/projects/image-analogies/watercolor.html">http://www.mrl.nyu.edu/projects/image-analogies/watercolor.html</a>)</p>
 
-<p>Since we are looking to have this execute in real-time, and specifically for videos, we may spend time looking into caching results for the previous frame.  The logic here is that Since there are many frames per second, there is not a huge change between frames, making it possible to use previous work.  </p>
+<p><img src="http://www.mrl.nyu.edu/projects/image-analogies/images/watercolor.jpg" alt="Source Image">
+[Source Image]
+<img src="http://www.mrl.nyu.edu/projects/image-analogies/images/boats.jpg" alt="Unfiltered Destination Image">
+[Unfiltered Destination Image]
+<img src="http://www.mrl.nyu.edu/projects/image-analogies/images/watercolor-boats.jpg" alt="Filtered Destination Image">
+[Filtered Destination Image]</p>
 
-<p>There are also preexisting techniques for parallel texture synthesis.  The current implementation described in our research is real-time as well.  </p>
+<p>An early pixel-based solution of example-based style transfer is by using "Image Analogies". An image analogy takes an unfiltered image (A), a styled version of the first image (A'), and applies the style to a third image (B), to create the result (B').  In the form of an analogy, this is A : A' :: B : B'.</p>
+
+<p>A simple description of the Image Analogy algorithm is as follows:</p>
+
+<pre><code>Compute Gaussian pyramids for A, A', B
+for each level l, from coarsest to finest: 
+  for each pixel q of B'_l (scan-line order) 
+    p = BestMatch(A, A', B, B', l, q) 
+    B'_l(q) = A'_l(p)
+return B'
+</code></pre>
+
+<p>BestMatch tries to find the best pixel p in A, such that the neighborhood around A(p) is similar to B(q). We also want to make sure that pixel p would give a coherent result in the already synthesized neighborhood of B'(q). The initial algorithm uses a serial approximate-nearest-neighborhood search to find the best pixel.</p>
+
+<p>We see two places in this algorithm where parallelism can be used. One thing we could improve is the approximate nearest neighborhood search. For each pixel q in B', we are trying to find the pixel p in A that has the most similar neighborhood to q in B. Calculating the distances from the neighborhood around B(q) to all the neighborhoods in A is independent, so we will definitely try to parallelize this step.</p>
+
+<p>Another way we may be able to speed up this program is by parallelizing across all pixels q in B'. Doing this, however, may lead to very incoherent results (the structure of the original image will get diminished).</p>
+
+<p>There are also patch-based solutions to the image style transfer problem.</p>
 
 <h3>
 <a name="the-challenge" class="anchor" href="#the-challenge"><span class="octicon octicon-link"></span></a>The Challenge</h3>
 
-<p>The most significant part of the challenge comes from achieving a real-time execution.  To help meet our goals, we can reduce the quality of the images, essentially decreasing the size of the problem.  Also, our current starter code is written in MATLAB, so we need to take the time to translate it into C++.</p>
+<p>There are two major challenges in this project:</p>
+
+<p>1) We need to improve the speed of the approximate-nearest-neighborhood search.</p>
+
+<p>2) We would like to parallelize across the pixels in the image while maintaining coherence in the result.</p>
+
+<p>If we solve these two problems and have time left, we'd like to use temporal context to make a coherent stylized video.</p>
 
 <h3>
 <a name="resources" class="anchor" href="#resources"><span class="octicon octicon-link"></span></a>Resources</h3>
 
-<p>The base algorithms that we will use come from two papers.  The first describes "Image Analogies" <a href="http://www.mrl.nyu.edu/publications/image-analogies/analogies-300dpi.pdf">http://www.mrl.nyu.edu/publications/image-analogies/analogies-300dpi.pdf</a>.  The second describes "Parallel Texture Synthesis" <a href="http://research.microsoft.com/en-us/um/people/hoppe/apptexsyn.pdf">http://research.microsoft.com/en-us/um/people/hoppe/apptexsyn.pdf</a>.  We have also found a paper detailing a CUDA specific approach <a href="http://download.springer.com/static/pdf/45/art%253A10.1007%252Fs00371-012-0701-4.pdf?auth66=1396815636_90dc75f6739fe23fb6a179e7de74a43e&amp;ext=.pdf">http://download.springer.com/static/pdf/45/art%253A10.1007%252Fs00371-012-0701-4.pdf?auth66=1396815636_90dc75f6739fe23fb6a179e7de74a43e&amp;ext=.pdf</a>.  </p>
+<p>The basis of our algorithm comes from "Image Analogies" <a href="http://www.mrl.nyu.edu/publications/image-analogies/analogies-300dpi.pdf">http://www.mrl.nyu.edu/publications/image-analogies/analogies-300dpi.pdf</a>.</p>
+
+<p>We have also found a paper detailing a CUDA specific approach to image analogies. <a href="http://download.springer.com/static/pdf/45/art%253A10.1007%252Fs00371-012-0701-4.pdf?auth66=1396815636_90dc75f6739fe23fb6a179e7de74a43e&amp;ext=.pdf">http://download.springer.com/static/pdf/45/art%253A10.1007%252Fs00371-012-0701-4.pdf?auth66=1396815636_90dc75f6739fe23fb6a179e7de74a43e&amp;ext=.pdf</a>.  </p>
+
+<p>Another approach to style transfer is by using stitching patches of the source image to create the destination. Here is a paper describing that approach: <a href="http://mmlab.siat.ac.cn/sfchen/Publications/TMM13-style.pdf">http://mmlab.siat.ac.cn/sfchen/Publications/TMM13-style.pdf</a></p>
+
+<p>We also found a couple papers on Texture Synthesis on the GPU:</p>
+
+<p>Pixel-based: <a href="http://research.microsoft.com/en-us/um/people/hoppe/apptexsyn.pdf">http://research.microsoft.com/en-us/um/people/hoppe/apptexsyn.pdf</a>.</p>
+
+<p>Patch-based: <a href="http://delivery.acm.org/10.1145/2390000/2383813/p115-lasram.pdf?ip=128.237.228.57&amp;id=2383813&amp;acc=ACTIVE%20SERVICE&amp;key=A792924B58C015C1%2E5A12BE0369099858%2E4D4702B0C3E38B35%2E4D4702B0C3E38B35&amp;CFID=431509807&amp;CFTOKEN=37457636&amp;__acm__=1396640643_e604d2caf28713d957e3c5fa3b34aa8a">http://delivery.acm.org/10.1145/2390000/2383813/p115-lasram.pdf?ip=128.237.228.57&amp;id=2383813&amp;acc=ACTIVE%20SERVICE&amp;key=A792924B58C015C1%2E5A12BE0369099858%2E4D4702B0C3E38B35%2E4D4702B0C3E38B35&amp;CFID=431509807&amp;CFTOKEN=37457636&amp;__acm__=1396640643_e604d2caf28713d957e3c5fa3b34aa8a</a></p>
 
 <h3>
 <a name="goals" class="anchor" href="#goals"><span class="octicon octicon-link"></span></a>Goals</h3>
 
-<p>We would really like to be able to make this happen in real time.  If we achieve this, we can just show a base image applied to a video.  If not, the best we can do is show speedup relative to a serial solution.</p>
+<p>We would really like to be able to make this happen in real time.  If we achieve this, we can just show a base image applied to a video.  If not, the best we can do is show a significant speedup relative to a serial solution.</p>
 
 <h3>
 <a name="platform-choice" class="anchor" href="#platform-choice"><span class="octicon octicon-link"></span></a>Platform Choice</h3>
@@ -75,15 +107,23 @@
 <h3>
 <a name="schedule" class="anchor" href="#schedule"><span class="octicon octicon-link"></span></a>Schedule</h3>
 
-<p>Week of April 8 - 
-Week of April 15 - 
-Week of April 21 - 
-Week of April 28 - 
-Week of May 5 - </p>
+<p>Week of April 8 - Planning, refining and researching for our initial approach
+Week of April 15 - Write serial version in C++
+Week of April 21 - Parallelize neighborhood search algorithm
+Week of April 28 - Parallelize over pixels/patches (coherence)
+Week of May 5 - Optimization</p>
       </section>
-
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Parallel Style Transfer maintained by <a href="https://github.com/jaisrael">jaisrael</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
     
+
   </body>
 </html>
