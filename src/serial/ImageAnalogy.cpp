@@ -1,5 +1,7 @@
 #include "ImageAnalogy.h"
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/flann/flann.hpp>
 #include <algorithm>
 #include "math.h"
 #include "structs.h"
@@ -20,9 +22,9 @@ void ImageAnalogy::construct_gaussian(const Mat& base, vector<Mat>& GP)
 
 }
 
-double ImageAnalogy::l2_norm(const vector<double>& F1, const vector<double>& F2)
+float ImageAnalogy::l2_norm(const vector<float>& F1, const vector<float>& F2)
 {
-  double sum = 0;
+  float sum = 0;
   for (int i = 0; i < F1.size(); i++)
   {
     sum += pow(F1[i] - F2[i],2);
@@ -30,7 +32,7 @@ double ImageAnalogy::l2_norm(const vector<double>& F1, const vector<double>& F2)
   return sum;
 }
 
-void ImageAnalogy::create_feature_vector(vector<double>& F, 
+void ImageAnalogy::create_feature_vector(vector<float>& F, 
                                          const vector<Mat>& GPM,
                                          const vector<Mat>& GPM_p,
                                          int row, int col, int l,
@@ -49,7 +51,7 @@ void ImageAnalogy::create_feature_vector(vector<double>& F,
   {
     const uchar* mp_row_ptr = GPM_p[l].ptr<uchar>(r);
     const uchar* m_row_ptr  = GPM[l].ptr<uchar>(r);
-    const double* g_row_ptr = gaussian_kernel_big.ptr<double>(i);
+    const float* g_row_ptr = gaussian_kernel_big.ptr<float>(i);
     mp_row_ptr += (col - left_displace);
     m_row_ptr += (col - left_displace);
     for (int c = col-left_displace; c <= right_displace+col; c++)
@@ -78,7 +80,7 @@ void ImageAnalogy::create_feature_vector(vector<double>& F,
   {
     const uchar* mp_row_ptr = GPM_p[l+1].ptr<uchar>(r);
     const uchar* m_row_ptr  = GPM[l+1].ptr<uchar>(r);
-    const double* g_row_ptr = gaussian_kernel_small.ptr<double>(i);
+    const float* g_row_ptr = gaussian_kernel_small.ptr<float>(i);
     mp_row_ptr += (col - left_displace);
     m_row_ptr += (col - left_displace);
     for (int c = col-left_displace; c <= right_displace+col; c++)
@@ -96,9 +98,9 @@ void ImageAnalogy::create_feature_vector(vector<double>& F,
 
 Point ImageAnalogy::brute_force_search(const ImagePyramids& IP,
                                        const int l, const Point q,
-                                       const vector<double>& FQ,
+                                       const vector<float>& FQ,
                                        const Displacement disp,
-                                       double& best_dist)
+                                       float& best_dist)
 {
 
   //cout << "bfs!" << endl;
@@ -119,12 +121,12 @@ Point ImageAnalogy::brute_force_search(const ImagePyramids& IP,
   {
     for (int c = left_displace; c < IP.GPA[l].cols-right_displace; c++)
     {
-      vector<double> FP;
+      vector<float> FP;
       //construct feature vector from A/A'
       create_feature_vector(FP, IP.GPA, IP.GPA_p, r, c, l, disp);
       //TODO: COARSE LEVEL!!!!!!!
       //compare with FQ
-      double norm = l2_norm(FP, FQ);
+      float norm = l2_norm(FP, FQ);
       //keep track if its the smallest
       if (norm < best_dist)
       {
@@ -141,30 +143,41 @@ Point ImageAnalogy::brute_force_search(const ImagePyramids& IP,
 
 Point ImageAnalogy::best_approximate_match(const ImagePyramids& IP,
                                            int l, Point q,
-                                           const vector<double>& FQ,
+                                           const vector<float>& FQ,
                                            const Displacement disp,
-                                           double& best_dist)
+                                           float& best_dist,
+                                           flann::Index& kdtree)
 {
 
-  return brute_force_search(IP, l, q, FQ, disp, best_dist);
+  //return brute_force_search(IP, l, q, FQ, disp, best_dist);
 
-/*
+
   if (disp.up_fine != h_size   || disp.down_fine != h_size ||
       disp.left_fine != h_size || disp.right_fine != h_size)
-    return brute_force_search(IP, l, q, FQ, disp);
+    return brute_force_search(IP, l, q, FQ, disp, best_dist);
   if (l == L-1) 
-    return brute_force_search(IP, l, q, FQ, disp);
-*/
+    return brute_force_search(IP, l, q, FQ, disp, best_dist);
+
   //otherwise, do (fl)ANN to figure out best approximate match
-  return q;
+
+  vector<int> index(1);
+  vector<float> dist(1);
+
+  kdtree.knnSearch(FQ, index, dist, 1, flann::SearchParams(128));
+
+  Point p;
+  p.x = (index[0] % (IP.GPA[l].cols - 2*h_size)) + h_size;
+  p.y = (index[0] / (IP.GPA[l].rows - 2*h_size)) + h_size;
+  best_dist = dist[0];
+  return p;
 }
 
 Point ImageAnalogy::best_coherence_match(const ImagePyramids& IP,
                                          const vector<Mat>& PS, 
                                          const int l, const Point q,
-                                         const vector<double>& FQ,
+                                         const vector<float>& FQ,
                                          const Displacement disp,
-                                         double& best_dist)
+                                         float& best_dist)
 {
   int q_row = q.y;
   int q_col = q.x;
@@ -176,8 +189,9 @@ Point ImageAnalogy::best_coherence_match(const ImagePyramids& IP,
   
   best_dist = 1E+37;
   Point best_index;
-  best_index.x = 0;
-  best_index.y = 0;
+  best_index.x = -1;
+  best_index.y = -1;
+  int never_happens = 0;
   for (int r = q_row-up_displace; r <= q_row; r++)
   {
     const Vec2s* s_row_ptr = PS[l].ptr<Vec2s>(r);
@@ -199,12 +213,13 @@ Point ImageAnalogy::best_coherence_match(const ImagePyramids& IP,
       if (t_q.x < (IP.GPA[l].cols - h_size) && t_q.x > (h_size - 1) &&
           t_q.y < (IP.GPA[l].rows - h_size) && t_q.y > (h_size - 1))
       {
-        vector<double> FT_q;
+        vector<float> FT_q;
         create_feature_vector(FT_q, IP.GPA, IP.GPA_p, t_q.y, t_q.x, l, disp);
-        double norm = l2_norm(FT_q, FQ);
+        float norm = l2_norm(FT_q, FQ);
         //keep track if its the smallest
         if (norm < best_dist)
         {
+          never_happens = 1;
           best_dist = norm;
           best_index.x = t_q.x;
           best_index.y = t_q.y;
@@ -215,7 +230,7 @@ Point ImageAnalogy::best_coherence_match(const ImagePyramids& IP,
 
     }
   }
-
+  //if (!never_happens) cout << "the impossible happened" << endl;
   return best_index;
 }
 
@@ -259,7 +274,7 @@ void ImageAnalogy::find_displacement(const int rows, const int cols,
 }
 
 Point ImageAnalogy::best_match(const ImagePyramids& IP, const vector<Mat>& PS, 
-                               const int l, const Point q)
+                               const int l, const Point q, flann::Index& kdtree)
 {
   int q_row = q.y;
   int q_col = q.x;
@@ -276,18 +291,53 @@ Point ImageAnalogy::best_match(const ImagePyramids& IP, const vector<Mat>& PS,
   }
   
   
-  vector<double> FQ;
-  double approx_dist, coher_dist; 
+  vector<float> FQ;
+  float approx_dist, coher_dist; 
   //construct feature vector from B/B'
   create_feature_vector(FQ, IP.GPB, IP.GPB_p, q_row, q_col, l, disp); 
-  Point p_a  = best_approximate_match(IP, l, q, FQ, disp, approx_dist);
+  Point p_a  = best_approximate_match(IP, l, q, FQ, disp, approx_dist, kdtree);
  
   Point p_c = best_coherence_match(IP, PS, l, q, FQ, disp, coher_dist);
-
+  if (p_c.x == -1) return p_a;
   if (coher_dist <= approx_dist*(1 + pow(2, -l)*K))
     return p_c;
   else
     return p_a;
+}
+
+void ImageAnalogy::create_feature_matrix(const int l, const vector<Mat>& GPM,
+                                         const vector<Mat>& GPM_p, 
+                                         Mat& feature_matrix)
+{
+
+  if (l == L-1) return;
+  int inner_rows = GPM[l].rows - 2*h_size;
+  int inner_cols = GPM[l].cols - 2*h_size;
+
+
+  int num_dimensions = (n_size*n_size) + (n_size*n_size)/2 + 
+                           2*(1+h_size)*(1+h_size);
+  feature_matrix.create(inner_rows*inner_cols, num_dimensions, CV_32FC1);
+
+  int i = 0;
+  float* fm_row_ptr = feature_matrix.ptr<float>(i);
+
+  vector<float> F;
+  for (int r = h_size; r < (GPM[l].rows - h_size); r++)
+  {
+
+    for (int c = h_size; c < (GPM[l].cols - h_size); c++)
+    {
+      create_feature_vector(F, GPM, GPM_p, r, c, l, disp_default);
+      assert(num_dimensions == F.size());
+      copy(F.begin(), F.end(), fm_row_ptr); 
+      
+      i++;
+      fm_row_ptr = feature_matrix.ptr<float>(i);  
+    }
+
+  }
+  
 }
 
 void ImageAnalogy::create_image_analogy(const Mat& A, const Mat& A_p, 
@@ -321,6 +371,15 @@ void ImageAnalogy::create_image_analogy(const Mat& A, const Mat& A_p,
     //for each point q in B_p
     int rows = IP.GPB_p[l].rows;
     int cols = IP.GPB_p[l].cols;
+
+    flann::KDTreeIndexParams indexParams(5);
+     
+    Mat feature_matrix = Mat::zeros(1,1,CV_32FC1);
+    cout << "gunna make feature_matrix" << endl;
+    create_feature_matrix(l, IP.GPA, IP.GPA_p, feature_matrix);
+    cout << "made feature_matrix" << endl;
+    flann::Index kdtree(feature_matrix, indexParams);
+
     for (int r = 0; r < rows; r++)
     {
       cout << "row " << r << " of the alg" << endl;
@@ -330,7 +389,7 @@ void ImageAnalogy::create_image_analogy(const Mat& A, const Mat& A_p,
       {
         Point q = Point(c,r);
         //cout << "q = " << q << endl;
-        Point p = best_match(IP, PS, l, q);
+        Point p = best_match(IP, PS, l, q, kdtree);
         //cout << "p = " << p << endl;
         //cout <<  endl;
         *bp_row_ptr = IP.GPA_p[l].at<uchar>(p.y, p.x);
@@ -340,6 +399,9 @@ void ImageAnalogy::create_image_analogy(const Mat& A, const Mat& A_p,
         source_row_ptr++;
       }
     }
+    namedWindow("Bp_current", CV_WINDOW_AUTOSIZE);
+    imshow("Bp_current", IP.GPB_p[l]);
+    waitKey(0);
   }
 
   B_p = IP.GPB_p[0];

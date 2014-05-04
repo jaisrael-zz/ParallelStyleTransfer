@@ -46,7 +46,7 @@ int main(int argc, char** argv)
   std::string bn = std::string(argv[3]);
   int pos = bn.find(bn, '.');
   bn = bn.substr(7, pos - 7);
-  filename = std::string("Results/coherence_") + bn + std::string("-l") + ss.str();
+  filename = std::string("Results/flann_coherence_") + bn + std::string("-l") + ss.str();
   //std::cout << filename << std::endl; 
   imwrite(filename, BP);
 
