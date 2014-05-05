@@ -41,8 +41,7 @@ class ImageAnalogy
 					   const std::vector<cv::Mat>& PS, 
                        const int level_index,
 					   const cv::Point q,
-                       cv::flann::Index& kdtree,
-                       const cv::Mat& fm);
+                       cv::flann::Index& kdtree);
   
   
   cv::Point brute_force_search(const ImagePyramids& IP,
@@ -56,8 +55,7 @@ class ImageAnalogy
                                    const std::vector<float>& FQ,
                                    const Displacement disp,
                                    float& best_dist,
-                                   cv::flann::Index& kdtree,
-                                   const cv::Mat& fm);
+                                   cv::flann::Index& kdtree);
 
 
   cv::Point best_coherence_match(const ImagePyramids& IP,

@@ -44,7 +44,7 @@ int main(int argc, char** argv)
   split(A_YIQ, A_YIQ_split);
   split(Ap_YIQ, Ap_YIQ_split);
   split(B_YIQ, B_YIQ_split);
-  int num_levels = 5;
+  int num_levels = 6;
 
   Mat A_YIQ_8u, Ap_YIQ_8u, B_YIQ_8u;
   A_YIQ_split[0].convertTo(A_YIQ_8u, CV_8UC1); 
@@ -52,13 +52,14 @@ int main(int argc, char** argv)
   B_YIQ_split[0].convertTo(B_YIQ_8u, CV_8UC1); 
   Mat A_Y_RM = A_YIQ_8u; 
   Mat Ap_Y_RM = Ap_YIQ_8u; 
-  ImageAnalogy IA(1, 5, num_levels);
+  ImageAnalogy IA(0, 5, num_levels);
   cs.luminance_remap(A_YIQ_8u, B_YIQ_8u, A_Y_RM);
   cs.luminance_remap(Ap_YIQ_8u, B_YIQ_8u, Ap_Y_RM);
   waitKey(0);
   
 
   Mat BP_Y, BP;
+  clock_t start = clock();
   IA.create_image_analogy(A_Y_RM, Ap_Y_RM, B_YIQ_8u, BP_Y);
   //IA.create_image_analogy(A_8u1, Ap_8u1, B_8u1, BP);
   //imwrite(
@@ -67,13 +68,15 @@ int main(int argc, char** argv)
   BP_Y.convertTo(BP_Y_64f, CV_64FC1); 
   cs.YIQ_to_RGB(BP_Y_64f, B_YIQ, BP);
  
+  std::cout << "Execution Time: " << double(clock() - start) / (double)CLOCKS_PER_SEC << "s" << std::endl;
+
   std::stringstream ss;
   ss << num_levels << ".jpg";
   std::string filename;
   std::string bn = std::string(argv[3]);
   int pos = bn.find(bn, '.');
   bn = bn.substr(7, pos - 7);
-  filename = std::string("Results/flann_coh1_CORRECTYIQ") + bn + std::string("-l") + ss.str();
+  filename = std::string("Results/ALL_FLANN") + bn + std::string("-l") + ss.str();
   //std::cout << filename << std::endl; 
   imwrite(filename, BP);
 
