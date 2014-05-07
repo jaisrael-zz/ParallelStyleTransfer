@@ -93,7 +93,15 @@ return B'
 <h3>
 <a name="brute-force-solution" class="anchor" href="#brute-force-solution"><span class="octicon octicon-link"></span></a>Brute-Force Solution</h3>
 
-<p>We started off with a serial, purely exhaustive brute-force solution.  </p>
+<p>We started off with a serial, purely exhaustive brute-force solution.  We quickly found out that a pure brute-force solution is not adequate for this problem on anything but a small scale.  However, this solution is always exactly correct, barring some possibly sub-optimal choices by the initial k-coherence algorithm.  On the small images shown here, the brute-force algorithm required several minutes to complete.</p>
+
+<p><img src="https://github.com/jaisrael/ParallelStyleTransfer/blob/gh-pages/src/serial/Images/newflower-src.jpg" alt="A"></p>
+
+<p><img src="https://github.com/jaisrael/ParallelStyleTransfer/blob/gh-pages/src/serial/Images/newflower-blur.jpg" alt="A'"></p>
+
+<p><img src="https://github.com/jaisrael/ParallelStyleTransfer/blob/gh-pages/src/serial/Images/toy-newshore-src.jpg" alt="B"></p>
+
+<p><img src="https://github.com/jaisrael/ParallelStyleTransfer/blob/gh-pages/src/serial/Results/flann_coh_YIQtoy-newshore-src.jpg-l5.jpg" alt="B'"></p>
 
 <h3>
 <a name="opencv-flann-solution" class="anchor" href="#opencv-flann-solution"><span class="octicon octicon-link"></span></a>OpenCV FLANN Solution</h3>
