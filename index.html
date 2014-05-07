@@ -38,8 +38,8 @@
           <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
         </div>
 
-        <h2>
-<a name="page-under-construction" class="anchor" href="#page-under-construction"><span class="octicon octicon-link"></span></a>Page Under Construction!</h2>
+        <h3>
+<a name="periodic-updates-will-occur-throughout-the-day-as-more-in-depth-analysis-is-completed" class="anchor" href="#periodic-updates-will-occur-throughout-the-day-as-more-in-depth-analysis-is-completed"><span class="octicon octicon-link"></span></a>Periodic updates will occur throughout the day as more in-depth analysis is completed!</h3>
 
 <h3>
 <a name="summary" class="anchor" href="#summary"><span class="octicon octicon-link"></span></a>Summary</h3>
@@ -93,7 +93,7 @@ return B'
 <h3>
 <a name="brute-force-solution" class="anchor" href="#brute-force-solution"><span class="octicon octicon-link"></span></a>Brute-Force Solution</h3>
 
-<p>We started off with a serial, purely exhaustive brute-force solution.  We quickly found out that a pure brute-force solution is not adequate for this problem on anything but a small scale.  However, this solution is always exactly correct, barring some minor sub-optimal choices by the initial k-coherence algorithm.  On the small images shown here, the brute-force algorithm required several minutes to complete.</p>
+<p>We started off with a serial, purely exhaustive brute-force solution.  We quickly found out that a pure brute-force solution is not adequate for this problem on anything but a small scale.  However, this solution is always exactly correct, barring some minor sub-optimal choices by the initial k-coherence algorithm.  On the small images shown here, the brute-force algorithm required about 15 minutes to complete.</p>
 
 <p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Images/newflower-src.jpg" alt="A"></p>
 
@@ -106,12 +106,28 @@ return B'
 <h3>
 <a name="opencv-flann-solution" class="anchor" href="#opencv-flann-solution"><span class="octicon octicon-link"></span></a>OpenCV FLANN Solution</h3>
 
-<p>Our next version avoided brute-force as much as possible, by taking advantage of OpenCV's FLANN library.  This achieved much faster results, and we could start to run our algorithm on larger images with artistic filters:</p>
+<p>Our next version avoided brute-force as much as possible, by taking advantage of OpenCV's FLANN library.<br>
+This achieved much faster results, and we could start to run our algorithm on larger images with artistic filters.  These images took about 15 seconds to render.  A pure brute-force solution would have taken several hours to complete.</p>
+
+<p>Pastel Filter</p>
+
+<p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Images/pastel-src.jpg" alt="A"></p>
+
+<p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Images/pastel.jpg" alt="A'"></p>
+
+<p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Images/darkclouds.jpg" alt="B"></p>
+
+<p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Results/ALL_FLANNdarkclouds.jpg-l3.jpg" alt="B'"></p>
+
+<p>Watercolor Filter</p>
+
+<p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Results/ALL_FLANNdarkclouds.jpg-l4.jpg" alt="B'"></p>
 
 <h3>
 <a name="cuda-solution" class="anchor" href="#cuda-solution"><span class="octicon octicon-link"></span></a>CUDA Solution</h3>
 
-<p>Coming Soon (likely tonight)!</p>
+<p>This algorithm breaks away from the inherent dependencies of neighborhoods in the interest of parallelism.  This comes at a cost of correctness, but acceptable correctness is achieved through the use of several correction passes, where the neighborhoods are updated between passes.
+Preliminary Results Coming Soon (likely tonight)!</p>
 
 <h3>
 <a name="resources" class="anchor" href="#resources"><span class="octicon octicon-link"></span></a>Resources</h3>
