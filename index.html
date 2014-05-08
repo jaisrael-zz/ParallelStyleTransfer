@@ -126,8 +126,13 @@ This achieved much faster results, and we could start to run our algorithm on la
 <h3>
 <a name="cuda-solution" class="anchor" href="#cuda-solution"><span class="octicon octicon-link"></span></a>CUDA Solution</h3>
 
-<p>This algorithm breaks away from the inherent dependencies of neighborhoods in the interest of parallelism.  This comes at a cost of correctness, but acceptable correctness is achieved through the use of several correction passes, where the neighborhoods are updated between passes.
-Preliminary Results Coming Soon (likely tonight)!</p>
+<p>This algorithm breaks away from the inherent dependencies of neighborhoods in the interest of parallelism.  This comes at a cost of correctness, but acceptable correctness is achieved through the use of several correction passes, where the neighborhoods are updated between passes.</p>
+
+<p>Currently, we have a correct, but naive, CUDA solution.  We have successfully parallelized a brute force solution, and it is achieving speedups relative to our initial brute force method.</p>
+
+<p>Right now, we are exploring ways to improve speed and correctness.  To improve the speed, we are exploring different ways to use memory.  Right now, everything is stored in global memory, and using texture memory for some of our matrices has potential for speedup.</p>
+
+<p>To improve correctness, we are fiddling with the amount of correctness passes, and the effect of k-coherence search.</p>
 
 <h3>
 <a name="resources" class="anchor" href="#resources"><span class="octicon octicon-link"></span></a>Resources</h3>
