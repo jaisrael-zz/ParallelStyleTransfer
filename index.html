@@ -38,8 +38,7 @@
           <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
         </div>
 
-        <h3>
-<a name="periodic-updates-will-occur-throughout-the-day-as-more-in-depth-analysis-is-completed" class="anchor" href="#periodic-updates-will-occur-throughout-the-day-as-more-in-depth-analysis-is-completed"><span class="octicon octicon-link"></span></a>Periodic updates will occur throughout the day as more in-depth analysis is completed!</h3>
+        <p>Final Paper:  </p>
 
 <h3>
 <a name="summary" class="anchor" href="#summary"><span class="octicon octicon-link"></span></a>Summary</h3>
@@ -88,7 +87,7 @@ return B'
 <p>2) We would like to parallelize across the pixels in the image while maintaining coherence in the result.</p>
 
 <h2>
-<a name="preliminary-results" class="anchor" href="#preliminary-results"><span class="octicon octicon-link"></span></a>Preliminary Results</h2>
+<a name="results" class="anchor" href="#results"><span class="octicon octicon-link"></span></a>Results</h2>
 
 <h3>
 <a name="brute-force-solution" class="anchor" href="#brute-force-solution"><span class="octicon octicon-link"></span></a>Brute-Force Solution</h3>
@@ -128,12 +127,6 @@ This achieved much faster results, and we could start to run our algorithm on la
 
 <p>This algorithm breaks away from the inherent dependencies of neighborhoods in the interest of parallelism.  This comes at a cost of correctness, but acceptable correctness is achieved through the use of several correction passes, where the neighborhoods are updated between passes.</p>
 
-<p>Currently, we have a correct, but naive, CUDA solution.  We have successfully parallelized a brute force solution, and it is achieving speedups relative to our initial brute force method.</p>
-
-<p>Right now, we are exploring ways to improve speed and correctness.  To improve the speed, we are exploring different ways to use memory.  Right now, everything is stored in global memory, and using texture memory for some of our matrices has potential for speedup.</p>
-
-<p>To improve correctness, we are fiddling with the amount of correctness passes, and the effect of k-coherence search.</p>
-
 <h3>
 <a name="resources" class="anchor" href="#resources"><span class="octicon octicon-link"></span></a>Resources</h3>
 
@@ -148,11 +141,6 @@ This achieved much faster results, and we could start to run our algorithm on la
 <p>Pixel-based: <a href="http://research.microsoft.com/en-us/um/people/hoppe/apptexsyn.pdf">http://research.microsoft.com/en-us/um/people/hoppe/apptexsyn.pdf</a>.</p>
 
 <p>Patch-based: <a href="http://delivery.acm.org/10.1145/2390000/2383813/p115-lasram.pdf?ip=128.237.228.57&amp;id=2383813&amp;acc=ACTIVE%20SERVICE&amp;key=A792924B58C015C1%2E5A12BE0369099858%2E4D4702B0C3E38B35%2E4D4702B0C3E38B35&amp;CFID=431509807&amp;CFTOKEN=37457636&amp;__acm__=1396640643_e604d2caf28713d957e3c5fa3b34aa8a">http://delivery.acm.org/10.1145/2390000/2383813/p115-lasram.pdf?ip=128.237.228.57&amp;id=2383813&amp;acc=ACTIVE%20SERVICE&amp;key=A792924B58C015C1%2E5A12BE0369099858%2E4D4702B0C3E38B35%2E4D4702B0C3E38B35&amp;CFID=431509807&amp;CFTOKEN=37457636&amp;__acm__=1396640643_e604d2caf28713d957e3c5fa3b34aa8a</a></p>
-
-<h3>
-<a name="goals" class="anchor" href="#goals"><span class="octicon octicon-link"></span></a>Goals</h3>
-
-<p>We would like to show a speedup relative to a FLANN solution.</p>
 
 <h3>
 <a name="platform-choice" class="anchor" href="#platform-choice"><span class="octicon octicon-link"></span></a>Platform Choice</h3>
