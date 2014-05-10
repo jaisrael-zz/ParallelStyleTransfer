@@ -32,16 +32,19 @@
       <section>
         <div id="title">
           <h1>Parallel Style Transfer</h1>
-          <p>Jason Israel and Michael Kamm, Going for Real-Time style transfer</p>
+          <p>Jason Israel and Michael Kamm</p>
           <hr>
           <span class="credits left">Project maintained by <a href="https://github.com/jaisrael">jaisrael</a></span>
           <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
         </div>
 
-        <h3>
+        <h1>
+<a name="final-paper" class="anchor" href="#final-paper"><span class="octicon octicon-link"></span></a>Final Paper:</h1>
+
+<h3>
 <a name="summary" class="anchor" href="#summary"><span class="octicon octicon-link"></span></a>Summary</h3>
 
-<p>We would like to implement a parallel example-based style transfer algorithm.  We are going to do this on the NVIDIA GPUs in the lab.  Ideally, we would like to achieve real-time analysis.</p>
+<p>We would like to implement a parallel example-based style transfer algorithm.  We are going to do this on the NVIDIA GPUs in the lab.  We are looking to achieve speedup relative to OpenCV's FLANN (Fast Approximate Nearest-Neighbor Search Library).</p>
 
 <h3>
 <a name="background" class="anchor" href="#background"><span class="octicon octicon-link"></span></a>Background</h3>
@@ -84,7 +87,48 @@ return B'
 
 <p>2) We would like to parallelize across the pixels in the image while maintaining coherence in the result.</p>
 
-<p>If we solve these two problems and have time left, we'd like to use temporal context to make a coherent stylized video.</p>
+<h2>
+<a name="results" class="anchor" href="#results"><span class="octicon octicon-link"></span></a>Results</h2>
+
+<h3>
+<a name="brute-force-solution" class="anchor" href="#brute-force-solution"><span class="octicon octicon-link"></span></a>Brute-Force Solution</h3>
+
+<p>We started off with a serial, purely exhaustive brute-force solution.  We quickly found out that a pure brute-force solution is not adequate for this problem on anything but a small scale.  However, this solution is always exactly correct, barring some minor sub-optimal choices by the initial k-coherence algorithm.  On the small images shown here, the brute-force algorithm required about 15 minutes to complete.</p>
+
+<p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Images/newflower-src.jpg" alt="A"></p>
+
+<p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Images/newflower-blur.jpg" alt="A'"></p>
+
+<p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Images/toy-newshore-src.jpg" alt="B"></p>
+
+<p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Results/flann_coh1_YIQtoy-newshore-src.jpg-l5.jpg" alt="B'"></p>
+
+<h3>
+<a name="opencv-flann-solution" class="anchor" href="#opencv-flann-solution"><span class="octicon octicon-link"></span></a>OpenCV FLANN Solution</h3>
+
+<p>Our next version avoided brute-force as much as possible, by taking advantage of OpenCV's FLANN library.<br>
+This achieved much faster results, and we could start to run our algorithm on larger images with artistic filters.  These images took about 15 seconds to render.  A pure brute-force solution would have taken several hours to complete.</p>
+
+<p>Pastel Filter</p>
+
+<p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Images/pastel-src.jpg" alt="A"></p>
+
+<p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Images/pastel.jpg" alt="A'"></p>
+
+<p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Images/darkclouds.jpg" alt="B"></p>
+
+<p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Results/ALL_FLANNdarkclouds.jpg-l3.jpg" alt="B'"></p>
+
+<p>Watercolor Filter</p>
+
+<p><img src="https://raw.githubusercontent.com/jaisrael/ParallelStyleTransfer/gh-pages/src/serial/Results/ALL_FLANNdarkclouds.jpg-l4.jpg" alt="B'"></p>
+
+<h3>
+<a name="cuda-solution" class="anchor" href="#cuda-solution"><span class="octicon octicon-link"></span></a>CUDA Solution</h3>
+
+<p>This algorithm breaks away from the inherent dependencies of neighborhoods in the interest of parallelism.  This comes at a cost of correctness, but acceptable correctness is achieved through the use of several correction passes, where the neighborhoods are updated between passes.</p>
+
+<p>More details on the CUDA execution can be found in the Final Paper at the top of the page.</p>
 
 <h3>
 <a name="resources" class="anchor" href="#resources"><span class="octicon octicon-link"></span></a>Resources</h3>
@@ -102,24 +146,20 @@ return B'
 <p>Patch-based: <a href="http://delivery.acm.org/10.1145/2390000/2383813/p115-lasram.pdf?ip=128.237.228.57&amp;id=2383813&amp;acc=ACTIVE%20SERVICE&amp;key=A792924B58C015C1%2E5A12BE0369099858%2E4D4702B0C3E38B35%2E4D4702B0C3E38B35&amp;CFID=431509807&amp;CFTOKEN=37457636&amp;__acm__=1396640643_e604d2caf28713d957e3c5fa3b34aa8a">http://delivery.acm.org/10.1145/2390000/2383813/p115-lasram.pdf?ip=128.237.228.57&amp;id=2383813&amp;acc=ACTIVE%20SERVICE&amp;key=A792924B58C015C1%2E5A12BE0369099858%2E4D4702B0C3E38B35%2E4D4702B0C3E38B35&amp;CFID=431509807&amp;CFTOKEN=37457636&amp;__acm__=1396640643_e604d2caf28713d957e3c5fa3b34aa8a</a></p>
 
 <h3>
-<a name="goals" class="anchor" href="#goals"><span class="octicon octicon-link"></span></a>Goals</h3>
-
-<p>We would really like to be able to make this happen in real time.  If we achieve this, we can just show a base image applied to a video.  If not, the best we can do is show a significant speedup relative to a serial solution.</p>
-
-<h3>
 <a name="platform-choice" class="anchor" href="#platform-choice"><span class="octicon octicon-link"></span></a>Platform Choice</h3>
 
-<p>We are choosing to use the NVIDIA GPUs in the lab.  Like the second assignment, this project involves math-intensive image manipulation. We plan on using C++ and Cuda. We may also use OpenCV to do some image preprocessing.</p>
+<p>We are choosing to use the NVIDIA GPUs in the lab.  Like the second assignment, this project involves math-intensive image manipulation. We plan on using C++ and Cuda. We also use OpenCV for image preprocessing.</p>
 
 <h3>
 <a name="schedule" class="anchor" href="#schedule"><span class="octicon octicon-link"></span></a>Schedule</h3>
 
 <ul>
 <li>Week of April 8 - Planning, refining and researching for our initial approach</li>
-<li>Week of April 15 - Write serial version in C++</li>
-<li>Week of April 21 - Parallelize neighborhood search algorithm</li>
-<li>Week of April 28 - Parallelize over pixels/patches (coherence)</li>
-<li>Week of May 5 - Optimization</li>
+<li>May 1-2 - Write serial version in C++</li>
+<li>May 2-3 - Write FLANN version</li>
+<li>May 4-5 - Install OpenCV on Gates machines and get it to work with CUDA (a nightmare)</li>
+<li>May 6-8 - Implement CUDA version</li>
+<li>May 8 - Conduct analysis on results</li>
 </ul>
       </section>
 
